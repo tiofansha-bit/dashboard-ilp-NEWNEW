@@ -40,7 +40,7 @@ function KesimpulanUtama({ all, groups }) {
             <option value="bahaya">Urut: tanda bahaya dulu</option><option value="persen">Urut: % tertinggi</option><option value="jumlah">Urut: jumlah sasaran</option>
           </select>
           <select data-testid="kesimpulan-min-select" value={minR} onChange={(e) => setMinR(Number(e.target.value))} className={SEL}>
-            {[1, 3, 5, 10, 20].map((n) => <option key={n} value={n}>Min. {n} responden</option>)}
+            {[1, 3, 5, 10, 20].map((n) => <option key={n} value={n}>{`Min. ${n} responden`}</option>)}
           </select>
         </div>
       </div>

@@ -1,0 +1,39 @@
+{
+  "summary": "Full review iteration 9 — exercised all admin menus and the kader home-visit flow against the live preview backend/frontend. 52/52 backend pytest cases pass (auth, mode PIN, master data CRUD, dashboard KPI/charts/jawaban/insights/rekap-kader, kasus, tindak-lanjut, kader mgmt, import templates, laporan preview + export CSV/Excel/PDF for 4 report types, audit, notifikasi, akreditasi, and the full kader flow: login → beranda → list keluarga → create keluarga + anggota → submit kunjungan → admin visibility → cleanup). Frontend sanity: admin login + navigation through all 9 admin menus with no API errors and no console/page errors; both Dashboard tabs render; kader11 login lands on Beranda with correct wilayah (Seroja · Selat Tengah), bottom nav (Beranda/Keluarga/Kunjungan/Tugas/Profil) all clickable.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin Dashboard filter + any date input", "issues": ["Uses browser-native date picker (type=date, placeholder 'mm/dd/yyyy') instead of a shadcn Calendar/Popover component — inconsistent with design system and locale (expected dd/mm/yyyy)."]},
+      {"screen": "Admin Dashboard (Hasil Jawaban tab)", "issues": ["React hydration warning in console: '<span> cannot be a child of <option>' — some Select renders a <span> inside a native <option>. Non-breaking but should be cleaned (use plain text inside <option> or move to shadcn Select)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_full_review_iter9.py",
+    "/app/test_reports/pytest/iter9.xml"
+  ],
+  "action_items": [
+    "(Low) Replace native date inputs in Admin Dashboard filter with shadcn Calendar/Popover and use dd/mm/yyyy locale.",
+    "(Low) Remove the <span> inside <option> that triggers the React hydration warning in Dashboard 'Hasil Jawaban & Kesimpulan' (likely one of the Select dropdowns like 'Top N', 'Semua kelompok', 'Semua prioritas', or 'Urut: tanda bahaya dulu')."
+  ],
+  "critical_code_review_comments": [
+    "server.py is ~1963 lines — exceeds the 700-line guideline. Split into routers (auth, master, keluarga, kunjungan, kasus, laporan, admin_import, akreditasi, dashboard) for maintainability.",
+    "/api/keluarga list runs per-row count_documents for anggota and kunjungan (N+1). For large datasets this will be slow — prefer aggregation with $lookup or pre-computed counts.",
+    "mode PIN is stored in DB settings via hash_password, but default seed assumed to be '123456' — ensure seed is idempotent and never logs the plain PIN. (Not retested here.)",
+    "Dashboard KPI shows 'Cakupan Kunjungan 108.7%' — denominator vs numerator mismatch (keluarga_dikunjungi > keluarga_terdaftar). Verify formula clamps at 100% or uses the correct base (terdaftar vs seharusnya dikunjungi)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_full_review_iter9.py (new)"
+  ],
+  "success_rate": {"backend": "100% (52/52)", "frontend": "100% smoke (all 9 admin menus + both dashboard tabs + kader beranda/keluarga/tugas/profil load with 0 API errors)"},
+  "test_credentials": "admin/admin123, kader11/kader123, MODE_PIN=123456 (verified working)",
+  "seed_data_creation": "Created & deleted one TEST_KK_iter9 keluarga + TEST_Anak anggota + one kunjungan via kader11 inside the test; cleaned up at end (soft-delete). Also created & deleted one TEST_pertanyaan master question. No lingering TEST_ data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend fully green against public URL. test_full_review_iter9.py covers every /api route group; run with `pytest backend/tests/test_full_review_iter9.py -n 0 -v`. Note pytest.ini forces -n 2 --dist loadscope by default. Only non-functional nits remain: native date picker and a <span>-in-<option> hydration warning on Dashboard. Cakupan Kunjungan showing 108.7% is a potential formula issue worth flagging to main agent.",
+  "rca of the issue": "N/A — no reproducible defects. Flagged items are code-review observations only."
+}
