@@ -85,3 +85,4 @@ users 31 · wilayah 4 · posyandu 6 · master_questions 135 · keluarga 56 · an
 - Backend deps installed (minus emergentintegrations), frontend yarn install. Snapshot data restored.
 - Verified: admin/admin123 & kader11/kader123 login 200, admin dashboard renders with data.
 - Full test (iteration_9, 2026-06): backend 52/52, frontend all admin menus + kader flow OK. Fixed <option> text-node warning in JawabanSummary. Flag: Cakupan Kunjungan can exceed 100% (formula).
+- Fix Cakupan Kunjungan (2026-06): KPI hanya hitung keluarga terdaftar (non-deleted, filter kelurahan) yg punya kunjungan terkirim; dibatasi maks 100%. Testing iteration_10: 11/11.

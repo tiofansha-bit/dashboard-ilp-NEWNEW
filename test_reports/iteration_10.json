@@ -1,0 +1,29 @@
+{
+  "summary": "Verified Cakupan Kunjungan fix. Backend /api/dashboard/kpi now intersects visited keluarga_ids with registered (non-deleted) keluarga ids and clamps cakupan at 100% (server.py L645-647, L672). 11/11 pytest cases pass against public URL: no-filter returns the expected 127 terdaftar / 122 dikunjungi / 96.1% cakupan; all four kelurahan filters (Selat Hulu 83/80/96.4%, Selat Tengah 30/30/100%, Selat Dalam 7/6/85.7%, Selat Utara 7/6/85.7%) satisfy invariants dikunjungi<=terdaftar and cakupan<=100 with cakupan == round(d/t*100,1). Date range filters (wide and narrow) also hold invariants. Regression: /dashboard/charts, /dashboard/insights, /dashboard/jawaban still 200. Frontend: Admin Dashboard KPI cards render 127 / 122 / 96.1% consistently (screenshot captured).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin Dashboard filter", "issues": ["Still uses browser-native date picker (mm/dd/yyyy) instead of shadcn Calendar — carried over from iter9, not in scope for this fix."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_cakupan_fix.py",
+    "/app/test_reports/pytest/iter10.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fix is correct and minimal: registered_ids = set(distinct keluarga.id with kelurahan+not-deleted), visited_ids intersected with registered_ids, cakupan clamped with min(..., 100.0). Edge case total_kel==0 returns cakupan=0 (handled).",
+    "Minor: distinct() + set-intersection runs in app memory; fine for current scale (hundreds). For >10k keluarga, prefer an aggregation ($lookup) to compute intersection in DB.",
+    "server.py still ~1965 lines — split into routers remains outstanding from iter9."
+  ],
+  "updated_files": ["/app/backend/tests/test_cakupan_fix.py (new)"],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (KPI cards render expected values)"},
+  "test_credentials": "admin/admin123",
+  "seed_data_creation": "None. No test data created or left behind.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Cakupan fix verified end-to-end. Dedicated regression test at /app/backend/tests/test_cakupan_fix.py (run: pytest backend/tests/test_cakupan_fix.py -n 0 -v). Expected baseline values 127/122/96.1% are hard-asserted — if seed data changes, loosen that single assertion but keep the invariant checks (dikunjungi<=terdaftar, cakupan<=100).",
+  "rca of the issue": "Previous iter9 saw cakupan=108.7% because kunjungan.distinct('keluarga_id') included keluarga_ids that were soft-deleted or outside the kelurahan filter, so numerator could exceed denominator. Fix: compute registered_ids first from keluarga collection with deleted!=true (+kelurahan filter), then intersect visited_ids with registered_ids, and defensively cap cakupan via min(..., 100.0)."
+}
