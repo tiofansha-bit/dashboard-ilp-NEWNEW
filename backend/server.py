@@ -642,8 +642,9 @@ async def dashboard_kpi(start: str = "", end: str = "", kelurahan: str = "", use
         kq["kelurahan"] = kelurahan; vq["kelurahan"] = kelurahan; cq["kelurahan"] = kelurahan
     if start or end:
         vq["created_at"] = dt_range(start, end); cq["waktu_lapor"] = dt_range(start, end)
-    total_kel = await db.keluarga.count_documents(kq)
-    visited_ids = await db.kunjungan.distinct("keluarga_id", vq)
+    registered_ids = set(await db.keluarga.distinct("id", kq))
+    total_kel = len(registered_ids)
+    visited_ids = set(await db.kunjungan.distinct("keluarga_id", vq)) & registered_ids
     total_visits = await db.kunjungan.count_documents(vq)
     sasaran = 0
     async for v in db.kunjungan.find(vq, {"anggota_ids": 1}):
@@ -668,7 +669,7 @@ async def dashboard_kpi(start: str = "", end: str = "", kelurahan: str = "", use
     data_belum_lengkap = await db.anggota.count_documents({"data_lengkap": False, "deleted": {"$ne": True}})
     return {
         "keluarga_terdaftar": total_kel, "keluarga_dikunjungi": len(visited_ids),
-        "cakupan": round(len(visited_ids)/total_kel*100, 1) if total_kel else 0,
+        "cakupan": min(round(len(visited_ids)/total_kel*100, 1), 100.0) if total_kel else 0,
         "total_kunjungan": total_visits, "sasaran_dikunjungi": sasaran,
         "kasus_merah": merah, "kasus_kuning": kuning, "belum_ditindaklanjuti": belum,
         "sedang_ditindaklanjuti": proses, "selesai": selesai,
